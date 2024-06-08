@@ -2,20 +2,33 @@ import React, { createContext, useReducer } from 'react';
 
 // The reducer - this is used to update the state, based on the action
 export const AppReducer = (state, action) => {
-    let budget = 0;
+    console.log("Reducer action:", action);
+
+    let budget = state.budget;
     switch (action.type) {
         case 'ADD_EXPENSE': {
             const total_budget = state.expenses.reduce(
                 (previousExp, currentExp) => previousExp + currentExp.cost, 0
             ) + action.payload.cost;
 
+            console.log("Total budget after adding:", total_budget);
+
             if (total_budget <= state.budget) {
-                const updatedExpenses = state.expenses.map((currentExp) => {
-                    if (currentExp.name === action.payload.name) {
-                        return { ...currentExp, cost: currentExp.cost + action.payload.cost };
-                    }
-                    return currentExp;
-                });
+                const expenseExists = state.expenses.find(exp => exp.name === action.payload.name);
+                let updatedExpenses;
+
+                if (expenseExists) {
+                    updatedExpenses = state.expenses.map((currentExp) => {
+                        if (currentExp.name === action.payload.name) {
+                            return { ...currentExp, cost: currentExp.cost + action.payload.cost };
+                        }
+                        return currentExp;
+                    });
+                } else {
+                    updatedExpenses = [...state.expenses, action.payload];
+                }
+
+                console.log("Updated expenses:", updatedExpenses);
 
                 return {
                     ...state,
@@ -29,11 +42,18 @@ export const AppReducer = (state, action) => {
 
         case 'RED_EXPENSE': {
             const updatedExpenses = state.expenses.map((currentExp) => {
-                if (currentExp.name === action.payload.name && currentExp.cost - action.payload.cost >= 0) {
-                    return { ...currentExp, cost: currentExp.cost - action.payload.cost };
+                if (currentExp.name === action.payload.name) {
+                    const newCost = currentExp.cost - action.payload.cost;
+                    if (newCost >= 0) {
+                        return { ...currentExp, cost: newCost };
+                    } else {
+                        console.warn(`Cannot reduce expense below zero for ${currentExp.name}`);
+                    }
                 }
                 return currentExp;
             });
+
+            console.log("Updated expenses after reduction:", updatedExpenses);
 
             return {
                 ...state,
@@ -42,13 +62,14 @@ export const AppReducer = (state, action) => {
         }
 
         case 'DELETE_EXPENSE': {
-            const updatedExpenses = state.expenses.map((currentExp) => {
-                if (currentExp.name === action.payload) {
-                    budget = state.budget + currentExp.cost;
-                    return { ...currentExp, cost: 0 };
-                }
-                return currentExp;
-            });
+            const expenseToDelete = state.expenses.find(exp => exp.name === action.payload);
+            if (expenseToDelete) {
+                budget += expenseToDelete.cost;
+            } else {
+                console.warn(`Expense with name ${action.payload} not found`);
+            }
+
+            const updatedExpenses = state.expenses.filter(exp => exp.name !== action.payload);
 
             return {
                 ...state,
@@ -73,6 +94,7 @@ export const AppReducer = (state, action) => {
             return state;
     }
 };
+
 
 // Sets the initial state when the app loads
 const initialState = {
