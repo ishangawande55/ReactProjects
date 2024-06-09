@@ -95,7 +95,6 @@ export const AppReducer = (state, action) => {
     }
 };
 
-
 // Sets the initial state when the app loads
 const initialState = {
     budget: 2000,
@@ -128,7 +127,7 @@ export const AppProvider = (props) => {
                 budget: state.budget,
                 remaining,
                 dispatch,
-                currency: state.currency
+                currency: state.currency,
             }}
         >
             {props.children}
